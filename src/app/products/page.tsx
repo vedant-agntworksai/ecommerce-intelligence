@@ -1,0 +1,1 @@
+import { SectionPage } from "@/components/section-page"; export default function Page(){return <SectionPage title="Products" description="Canonical product catalog across all supported retailers. Product cards are created from stored canonical identities, not duplicated retailer listings."/>}
