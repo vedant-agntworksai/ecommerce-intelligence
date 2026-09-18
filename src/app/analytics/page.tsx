@@ -1,0 +1,1 @@
+import { SectionPage } from "@/components/section-page"; export default function Page(){return <SectionPage title="Analytics" description="Pricing, ratings, reviews, retailer coverage, and historical trends. Historical charts appear only when snapshot data exists."/>}
