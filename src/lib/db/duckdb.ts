@@ -8,17 +8,15 @@ export class DuckDbDatabase implements Database {
   static async create(){
     const dbPath = process.env.DUCKDB_PATH ?? "./data/ecommerce.duckdb";
     fs.mkdirSync(path.dirname(dbPath), { recursive:true });
-    return new DuckDbDatabase(await DuckDBInstance.create(dbPath));
+    return new DuckDbDatabase(await DuckDBInstance.fromCache(dbPath));
   }
   async query<T>(sql:string, params:unknown[] = []):Promise<QueryResult<T>> {
     const conn = await this.instance.connect();
     try {
-      const prepared = await conn.prepare(sql);
-      for (let i=0;i<params.length;i++) prepared.bindValue(i+1, params[i] as never);
-      const result = await prepared.run();
-      const rows = await result.getRowObjects() as T[];
+      const reader = await conn.runAndReadAll(sql, params as never[]);
+      const rows = reader.getRowObjectsJS() as T[];
       return { rows, rowCount: rows.length };
     } finally { conn.closeSync(); }
   }
-  async close(){ this.instance.closeSync(); }
+  async close(){ /* cached instance is process-scoped; connections are closed per query */ }
 }
