@@ -1,0 +1,1 @@
+import { SectionPage } from "@/components/section-page"; export default function Page(){return <SectionPage title="Competitors" description="Local-first comparable-product relationships, cross-retailer coverage, price/unit comparisons, and descriptive market views."/>}
