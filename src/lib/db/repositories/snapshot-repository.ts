@@ -1,0 +1,2 @@
+import { randomUUID } from "node:crypto"; import type { Database } from "../types"; import type { NormalizedRetailerProduct } from "@/lib/domain";
+export class SnapshotRepository{constructor(private db:Database){} async capture(canonicalId:string,p:NormalizedRetailerProduct){await this.db.query("INSERT INTO historical_snapshots(id,canonical_product_id,retailer_product_id,price,rating,review_count,availability) VALUES($1,$2,$3,$4,$5,$6,$7)",[randomUUID(),canonicalId,p.productId,p.price,p.rating,p.reviewCount,p.availability]);}}
