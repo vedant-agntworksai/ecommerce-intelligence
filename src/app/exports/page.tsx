@@ -1,0 +1,1 @@
+import { SectionPage } from "@/components/section-page"; export default function Page(){return <SectionPage title="Exports" description="Export canonical products, retailer listings, reviews, competitor relationships, and snapshots without exposing internal scraper scripts."/>}
