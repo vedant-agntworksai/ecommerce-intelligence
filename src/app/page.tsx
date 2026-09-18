@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db"; import { NewScrapeForm } from "@/components/new-scrape-form";
-async function metrics(){try{const db=await getDb();const q=async(sql:string)=>(await db.query<{n:number}>(sql)).rows[0]?.n??0;return{
+async function metrics(){try{const db=await getDb();const q=async(sql:string)=>Number((await db.query<any>(sql)).rows[0]?.n??0);return{
  brands:await q("SELECT COUNT(*) n FROM brands"),products:await q("SELECT COUNT(*) n FROM canonical_products"),listings:await q("SELECT COUNT(*) n FROM retailer_products"),
  reviews:await q("SELECT COUNT(*) n FROM reviews"),competitors:await q("SELECT COUNT(*) n FROM competitor_relationships"),retailers:await q("SELECT COUNT(DISTINCT retailer) n FROM retailer_products")
  };}catch{return{brands:0,products:0,listings:0,reviews:0,competitors:0,retailers:0};}}
