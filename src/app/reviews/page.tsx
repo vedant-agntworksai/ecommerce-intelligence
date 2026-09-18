@@ -1,0 +1,1 @@
+import { SectionPage } from "@/components/section-page"; export default function Page(){return <SectionPage title="Reviews" description="Incrementally collected review records with retailer, rating, date, verification, and keyword analysis."/>}
