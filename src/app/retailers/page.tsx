@@ -1,0 +1,1 @@
+import { SectionPage } from "@/components/section-page"; export default function Page(){return <SectionPage title="Retailers" description="Coverage and collection health for Amazon, Walmart, Lowe's, and Home Depot."/>}
