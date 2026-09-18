@@ -1,0 +1,9 @@
+.next
+node_modules
+.env
+.env.local
+data/*.duckdb
+data/*.wal
+coverage
+dist
+.DS_Store
