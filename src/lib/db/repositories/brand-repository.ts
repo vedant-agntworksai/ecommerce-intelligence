@@ -1,10 +1,26 @@
-import { randomUUID } from "node:crypto"; import type { Database } from "../types";
+import { randomUUID } from "node:crypto";
+import type { Database } from "../types";
 const slugify=(x:string)=>x.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 export class BrandRepository{
- constructor(private db:Database){}
- async getOrCreate(name:string){const slug=slugify(name);let {rows}=await this.db.query<any>("SELECT * FROM brands WHERE slug=$1 LIMIT 1",[slug]);if(rows[0])return rows[0];const id=randomUUID();await this.db.query("INSERT INTO brands(id,name,slug) VALUES($1,$2,$3)",[id,name.trim(),slug]);rows=(await this.db.query<any>("SELECT * FROM brands WHERE id=$1",[id])).rows;return rows[0];}
- async list(){return (await this.db.query<any>(`SELECT b.*, COUNT(DISTINCT cp.id) unique_products, COUNT(DISTINCT rp.retailer || ':' || rp.retailer_product_id) retailer_listings,
- COUNT(DISTINCT rp.retailer) retailers, COUNT(r.review_id) reviews, AVG(r.rating) average_rating
- FROM brands b LEFT JOIN canonical_products cp ON cp.brand_id=b.id LEFT JOIN retailer_products rp ON rp.canonical_product_id=cp.id
- LEFT JOIN reviews r ON r.retailer=rp.retailer AND r.retailer_product_id=rp.retailer_product_id GROUP BY b.id,b.name,b.slug,b.created_at,b.updated_at ORDER BY b.name`)).rows;}
+  constructor(private db:Database){}
+  async getOrCreate(name:string){
+    const slug=slugify(name);
+    let {rows}=await this.db.query<any>("SELECT * FROM brands WHERE slug=$1 LIMIT 1",[slug]);
+    if(rows[0])return rows[0];
+    const id=randomUUID();await this.db.query("INSERT INTO brands(id,name,slug) VALUES($1,$2,$3)",[id,name.trim(),slug]);
+    rows=(await this.db.query<any>("SELECT * FROM brands WHERE id=$1",[id])).rows;return rows[0];
+  }
+  async list(){
+    return (await this.db.query<any>(`
+      SELECT b.*,
+        (SELECT COUNT(*) FROM canonical_products cp WHERE cp.brand_id=b.id) unique_products,
+        (SELECT COUNT(*) FROM retailer_products rp JOIN canonical_products cp ON cp.id=rp.canonical_product_id WHERE cp.brand_id=b.id) retailer_listings,
+        (SELECT COUNT(DISTINCT rp.retailer) FROM retailer_products rp JOIN canonical_products cp ON cp.id=rp.canonical_product_id WHERE cp.brand_id=b.id) retailers,
+        (SELECT COUNT(*) FROM reviews rv JOIN retailer_products rp ON rp.retailer=rv.retailer AND rp.retailer_product_id=rv.retailer_product_id JOIN canonical_products cp ON cp.id=rp.canonical_product_id WHERE cp.brand_id=b.id) reviews,
+        (SELECT AVG(rv.rating) FROM reviews rv JOIN retailer_products rp ON rp.retailer=rv.retailer AND rp.retailer_product_id=rv.retailer_product_id JOIN canonical_products cp ON cp.id=rp.canonical_product_id WHERE cp.brand_id=b.id AND rv.rating IS NOT NULL) average_rating,
+        (SELECT COUNT(DISTINCT cr.competitor_product_id) FROM competitor_relationships cr JOIN canonical_products cp ON cp.id=cr.source_product_id WHERE cp.brand_id=b.id) competitors,
+        (SELECT MAX(rp.last_scraped) FROM retailer_products rp JOIN canonical_products cp ON cp.id=rp.canonical_product_id WHERE cp.brand_id=b.id) last_updated
+      FROM brands b ORDER BY b.name
+    `)).rows;
+  }
 }
