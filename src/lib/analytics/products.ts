@@ -1,11 +1,12 @@
 import type { Database } from "@/lib/db/types";
 
-export interface ProductFilters {search?:string;category?:string;retailer?:string;minPrice?:number;maxPrice?:number;minRating?:number;minReviews?:number;availability?:string;hasUpc?:boolean;hasGtin?:boolean;hasModel?:boolean;retailerCount?:number;}
+export interface ProductFilters {brandId?:string;search?:string;category?:string;retailer?:string;minPrice?:number;maxPrice?:number;minRating?:number;minReviews?:number;availability?:string;hasUpc?:boolean;hasGtin?:boolean;hasModel?:boolean;retailerCount?:number;}
 const n=(v:unknown)=>v==null?0:Number(v);const nullable=(v:unknown)=>v==null?null:Number(v);
 const images=(v:unknown)=>{try{const x=JSON.parse(String(v??"[]"));return Array.isArray(x)?x:[];}catch{return[];}};
 
-export async function listCanonicalProducts(db:Database,filters:ProductFilters={},limit=250){
+export async function listCanonicalProducts(db:Database,filters:ProductFilters={},limit=60,offset=0){
   const params:unknown[]=[];const where:string[]=[];const add=(value:unknown)=>{params.push(value);return `$${params.length}`;};
+  if(filters.brandId)where.push(`cp.brand_id=${add(filters.brandId)}`);
   if(filters.search){const p=add(`%${filters.search.toLowerCase()}%`);where.push(`(LOWER(cp.title) LIKE ${p} OR LOWER(b.name) LIKE ${p} OR LOWER(COALESCE(cp.model_number,'')) LIKE ${p})`);}
   if(filters.category)where.push(`LOWER(COALESCE(cp.category,''))=${add(filters.category.toLowerCase())}`);
   if(filters.retailer)where.push(`EXISTS(SELECT 1 FROM retailer_products rx WHERE rx.canonical_product_id=cp.id AND rx.retailer=${add(filters.retailer)})`);
@@ -18,7 +19,7 @@ export async function listCanonicalProducts(db:Database,filters:ProductFilters={
   if(filters.hasGtin!=null)where.push(filters.hasGtin?"cp.gtin IS NOT NULL AND TRIM(cp.gtin)<>''":"(cp.gtin IS NULL OR TRIM(cp.gtin)='')");
   if(filters.hasModel!=null)where.push(filters.hasModel?"cp.model_number IS NOT NULL AND TRIM(cp.model_number)<>''":"(cp.model_number IS NULL OR TRIM(cp.model_number)='')");
   if(filters.retailerCount!=null)where.push(`(SELECT COUNT(DISTINCT rx.retailer) FROM retailer_products rx WHERE rx.canonical_product_id=cp.id)>=${add(filters.retailerCount)}`);
-  params.push(limit);
+  params.push(limit);const limitParam=`${params.length}`;params.push(offset);const offsetParam=`${params.length}`;
   const {rows}=await db.query<any>(`
     SELECT cp.*,b.name brand,
       (SELECT COUNT(DISTINCT rx.retailer) FROM retailer_products rx WHERE rx.canonical_product_id=cp.id) retailer_count,
@@ -28,7 +29,7 @@ export async function listCanonicalProducts(db:Database,filters:ProductFilters={
       (SELECT AVG(rx.rating) FROM retailer_products rx WHERE rx.canonical_product_id=cp.id AND rx.rating IS NOT NULL) average_rating,
       (SELECT COUNT(*) FROM reviews rv JOIN retailer_products rx ON rx.retailer=rv.retailer AND rx.retailer_product_id=rv.retailer_product_id WHERE rx.canonical_product_id=cp.id) total_reviews
     FROM canonical_products cp JOIN brands b ON b.id=cp.brand_id
-    ${where.length?`WHERE ${where.join(" AND ")}`:""} ORDER BY cp.updated_at DESC,cp.title LIMIT $${params.length}
+    ${where.length?`WHERE ${where.join(" AND ")}`:""} ORDER BY cp.updated_at DESC,cp.title LIMIT ${limitParam} OFFSET ${offsetParam}
   `,params);
   return rows.map(r=>({...r,retailer_count:n(r.retailer_count),lowest_price:nullable(r.lowest_price),highest_price:nullable(r.highest_price),average_rating:nullable(r.average_rating),total_reviews:n(r.total_reviews),images:images(r.images_json)}));
 }
