@@ -8,6 +8,7 @@ import { SnapshotRepository } from "@/lib/db/repositories/snapshot-repository";
 import { SettingsRepository } from "@/lib/db/repositories/settings-repository";
 import { getRetailerAdapter } from "@/lib/retailers";
 import { competitorScore, matchLabel } from "@/lib/matching/competitors";
+import { PDP_RESOURCE_KINDS,isFresh } from "@/lib/cache/policy";
 import type { CanonicalProduct, NormalizedRetailerProduct, ProductReference } from "@/lib/domain";
 import type { ScrapeJobPayload } from "./types";
 
@@ -59,7 +60,9 @@ export async function processScrapeJob(payload:ScrapeJobPayload){
     let product:NormalizedRetailerProduct|null=null;
     let canonicalProduct:CanonicalProduct|null=null;
 
-    if(knownListing&&!payload.forceRefresh){
+    const pdpFreshMs=Math.min(...PDP_RESOURCE_KINDS.map(kind=>settings.ttlMs[kind]));
+    const canReuseListing=knownListing&&!payload.forceRefresh&&(!payload.collectPdp||isFresh(knownListing.last_scraped,pdpFreshMs));
+    if(canReuseListing){
       reused++;
       product=storedListingToProduct(knownListing);
       if(knownListing.canonical_product_id){
