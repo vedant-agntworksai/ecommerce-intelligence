@@ -4,6 +4,7 @@ export interface ProductReference {
   retailer: Retailer;
   retailerProductId?: string;
   url: string;
+  titleHint?: string;
   forceRefresh?: boolean;
 }
 
@@ -24,9 +25,16 @@ export interface NormalizedRetailerProduct {
   fulfilledBy?: string | null; rating?: number | null; reviewCount?: number | null; images: string[]; features: string[];
   specifications: Record<string,string>; variants: unknown[]; scrapedAt: string; raw?: unknown;
 }
+
 export interface NormalizedReview {
   retailer: Retailer; retailerProductId: string; reviewId: string; rating?: number | null; title?: string | null; reviewText?: string | null;
   reviewerName?: string | null; verifiedPurchase?: boolean | null; reviewDate?: string | null; helpfulVotes?: number | null; variant?: string | null; scrapedAt: string;
 }
+
 export interface CompetitorSearchOptions { limit: number; sizeTolerance: number; }
-export interface ReviewOptions { maxReviews: number; incremental: boolean; }
+export interface ReviewOptions {
+  maxReviews: number;
+  incremental: boolean;
+  knownReviewIds?: string[];
+  forceRefresh?: boolean;
+}
