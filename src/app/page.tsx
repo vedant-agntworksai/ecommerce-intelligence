@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getDb } from "@/lib/db"; import { getOverviewAnalytics } from "@/lib/analytics"; import { NewScrapeForm } from "@/components/new-scrape-form"; import { KpiGrid } from "@/components/kpi-grid"; import { BarList } from "@/components/bar-list"; import { LineChart } from "@/components/line-chart"; import { formatNumber,formatDate } from "@/lib/format";
+import { getDb } from "@/lib/db"; import { SettingsRepository } from "@/lib/db/repositories/settings-repository"; import { getOverviewAnalytics } from "@/lib/analytics"; import { NewScrapeForm } from "@/components/new-scrape-form"; import { KpiGrid } from "@/components/kpi-grid"; import { BarList } from "@/components/bar-list"; import { LineChart } from "@/components/line-chart"; import { formatNumber,formatDate } from "@/lib/format";
 export const dynamic="force-dynamic";
 export default async function Overview(){
-  const data=await getOverviewAnalytics(await getDb());
+  const db=await getDb();const [data,settings]=await Promise.all([getOverviewAnalytics(db),new SettingsRepository(db).get()]);
   const k=data.kpis,q=data.quality;
   return <div className="p-8 space-y-8">
     <header><p className="text-sm text-cyan-400">Overview</p><h2 className="text-3xl font-semibold mt-1">Commerce intelligence control center</h2><p className="muted mt-2">All values come from stored retailer data. No sample metrics are synthesized.</p></header>
@@ -12,7 +12,7 @@ export default async function Overview(){
       {label:"Total Reviews",value:formatNumber(k.totalReviews)},{label:"Average Rating",value:formatNumber(k.averageRating)},
       {label:"Competitor Relationships",value:formatNumber(k.competitors)},{label:"Active Retailers",value:formatNumber(k.retailers)},
     ]}/>
-    <NewScrapeForm/>
+    <NewScrapeForm defaultMaxReviews={settings.defaultMaxReviews} defaultCompetitors={settings.defaultCompetitors}/>
     <section><h3 className="mb-3 text-lg font-semibold">Data completeness</h3><KpiGrid items={[
       {label:"Missing UPC",value:formatNumber(q.missingUpc)},{label:"Missing GTIN",value:formatNumber(q.missingGtin)},
       {label:"Missing Model",value:formatNumber(q.missingModel)},{label:"Missing Price",value:formatNumber(q.missingPrice)},
