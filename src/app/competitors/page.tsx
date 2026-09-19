@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 export default async function Competitors({searchParams}:{searchParams:Promise<Record<string,string|undefined>>}){
   const q=await searchParams;
   const rows=await getCompetitorMarket(await getDb(),{
-    sourceBrand:q.sourceBrand,category:q.category,subcategory:q.subcategory,form:q.form,retailer:q.retailer,
+    sourceBrand:q.sourceBrand,category:q.category,subcategory:q.subcategory,size:q.size,form:q.form,retailer:q.retailer,
   });
 
   return <div className="p-8">
@@ -16,11 +16,11 @@ export default async function Competitors({searchParams}:{searchParams:Promise<R
     <h2 className="mt-1 text-3xl font-semibold">Comparable product market</h2>
     <p className="muted mt-2">Relationships are ranked from normalized functional attributes. Numeric scores remain internal.</p>
 
-    <form className="card mt-6 grid gap-3 p-4 md:grid-cols-3 xl:grid-cols-6">
+    <form className="card mt-6 grid gap-3 p-4 md:grid-cols-3 xl:grid-cols-7">
       <input name="sourceBrand" defaultValue={q.sourceBrand} placeholder="Source brand" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"/>
       <input name="category" defaultValue={q.category} placeholder="Category" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"/>
       <input name="subcategory" defaultValue={q.subcategory} placeholder="Subcategory" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"/>
-      <input name="form" defaultValue={q.form} placeholder="Formulation" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"/>
+      <input name="size" defaultValue={q.size} placeholder="Size (e.g. 1 gal)" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"/><input name="form" defaultValue={q.form} placeholder="Formulation" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm"/>
       <select name="retailer" defaultValue={q.retailer??""} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm">
         <option value="">All retailers</option><option value="amazon">Amazon</option><option value="walmart">Walmart</option><option value="lowes">Lowe&apos;s</option><option value="homedepot">Home Depot</option>
       </select>
