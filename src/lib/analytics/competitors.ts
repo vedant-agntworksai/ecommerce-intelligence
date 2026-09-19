@@ -5,8 +5,10 @@ export interface CompetitorFilters { sourceBrand?:string; category?:string; subc
 const num=(v:unknown)=>v==null?null:Number(v);
 
 export async function getCompetitorMarket(db:Database,filters:CompetitorFilters={}){
-  const params:unknown[]=[];const where:string[]=[];
+  const params:unknown[]=[];
+  const where:string[]=[];
   const add=(v:unknown)=>{params.push(v);return `$${params.length}`;};
+
   if(filters.sourceBrand)where.push(`LOWER(sb.name)=${add(filters.sourceBrand.toLowerCase())}`);
   if(filters.category)where.push(`LOWER(COALESCE(source.category,''))=${add(filters.category.toLowerCase())}`);
   if(filters.subcategory)where.push(`LOWER(COALESCE(source.subcategory,''))=${add(filters.subcategory.toLowerCase())}`);
@@ -16,6 +18,8 @@ export async function getCompetitorMarket(db:Database,filters:CompetitorFilters=
   const {rows}=await db.query<any>(`
     SELECT cr.label,cr.updated_at,
       source.id source_id,source.title source_title,sb.name source_brand,source.size_text source_size,source.formulation source_formulation,
+      source.normalized_quantity source_quantity,source.normalized_unit source_unit,
+      (SELECT MIN(rp.price) FROM retailer_products rp WHERE rp.canonical_product_id=source.id AND rp.price IS NOT NULL) source_price,
       competitor.id competitor_id,competitor.title competitor_title,cb.name competitor_brand,competitor.size_text competitor_size,competitor.formulation competitor_formulation,
       competitor.normalized_quantity competitor_quantity,competitor.normalized_unit competitor_unit,
       (SELECT MIN(rp.price) FROM retailer_products rp WHERE rp.canonical_product_id=competitor.id AND rp.price IS NOT NULL) competitor_price,
@@ -32,8 +36,21 @@ export async function getCompetitorMarket(db:Database,filters:CompetitorFilters=
   `,params);
 
   return rows.map(r=>{
-    const price=num(r.competitor_price);
-    const quantity=num(r.competitor_quantity);
-    return {...r,competitor_price:price,competitor_rating:num(r.competitor_rating),competitor_review_count:Number(r.competitor_review_count??0),retailer_count:Number(r.retailer_count??0),unit_price:unitPrice(price,quantity,r.competitor_unit)};
+    const sourcePrice=num(r.source_price);
+    const competitorPrice=num(r.competitor_price);
+    const sourceQuantity=num(r.source_quantity);
+    const competitorQuantity=num(r.competitor_quantity);
+    const compatible=!!r.source_unit&&r.source_unit===r.competitor_unit;
+    return {
+      ...r,
+      source_price:sourcePrice,
+      competitor_price:competitorPrice,
+      competitor_rating:num(r.competitor_rating),
+      competitor_review_count:Number(r.competitor_review_count??0),
+      retailer_count:Number(r.retailer_count??0),
+      source_unit_price:compatible?unitPrice(sourcePrice,sourceQuantity,r.source_unit):null,
+      competitor_unit_price:compatible?unitPrice(competitorPrice,competitorQuantity,r.competitor_unit):null,
+      units_compatible:compatible,
+    };
   });
 }
