@@ -1,2 +1,8 @@
-import { SectionPage } from "@/components/section-page"; import { DEFAULT_TTLS_MS } from "@/lib/cache/policy";
-export default function Page(){return <SectionPage title="Settings" description="Cost controls and matching defaults. Environment-specific secrets remain server-side."><div className="card mt-8 overflow-hidden"><table className="w-full text-sm"><thead><tr className="text-left text-slate-400"><th className="p-4">Resource</th><th>Default TTL</th></tr></thead><tbody>{Object.entries(DEFAULT_TTLS_MS).map(([k,v])=><tr key={k} className="border-t border-slate-800"><td className="p-4">{k.replaceAll("_"," ")}</td><td>{Math.round(v/3600000)} hours</td></tr>)}</tbody></table></div></SectionPage>}
+import { getDb } from "@/lib/db";
+import { SettingsRepository } from "@/lib/db/repositories/settings-repository";
+import { SettingsForm } from "@/components/settings-form";
+export const dynamic="force-dynamic";
+export default async function Settings(){
+  const settings=await new SettingsRepository(await getDb()).get();
+  return <div className="p-8"><p className="text-sm text-cyan-400">Settings</p><h2 className="mt-1 text-3xl font-semibold">Cost and matching controls</h2><p className="muted mt-2 mb-6">These values are persisted in the application database. Oxylabs credentials stay server-side in environment variables.</p><SettingsForm initial={settings}/></div>;
+}
