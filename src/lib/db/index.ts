@@ -1,13 +1,17 @@
 import type { Database } from "./types";
-import { DuckDbDatabase } from "./duckdb";
-import { PostgresDatabase } from "./postgres";
 
 let singleton: Promise<Database> | undefined;
+
 export function getDb():Promise<Database> {
   if (!singleton) {
-    singleton = process.env.DB_ENGINE === "postgres"
-      ? Promise.resolve(new PostgresDatabase())
-      : DuckDbDatabase.create();
+    singleton = (async () => {
+      if (process.env.DB_ENGINE === "postgres") {
+        const { PostgresDatabase } = await import("./postgres");
+        return new PostgresDatabase();
+      }
+      const { DuckDbDatabase } = await import("./duckdb");
+      return DuckDbDatabase.create();
+    })();
   }
   return singleton;
 }
