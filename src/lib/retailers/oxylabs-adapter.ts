@@ -74,18 +74,34 @@ export abstract class OxylabsRetailerAdapter implements RetailerAdapter {
     const p=r?.results?.[0]??r?.product??r;
     const sizeText=p.size??p.size_text??p.net_content??null;
     const measure=parseMeasure(sizeText);
+    const specifications=p.specifications&&typeof p.specifications==="object"?p.specifications:{};
+    const spec=(...keys:string[])=>{
+      const entries=Object.entries(specifications as Record<string,unknown>);
+      for(const key of keys){
+        const hit=entries.find(([k])=>k.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().includes(key));
+        if(hit&&hit[1]!=null)return String(hit[1]);
+      }
+      return null;
+    };
+    const functionalCategory=p.function??p.functional_category??p.product_function??p.product_type??p.type??null;
+    const activeIngredient=p.active_ingredient??spec("active ingredient","active ingredients");
+    const coverage=p.coverage??spec("coverage","covers");
+    const applicationMethod=p.application_method??spec("application method","application type","applicator");
+    const indoorOutdoor=p.indoor_outdoor??spec("indoor outdoor","indoor/outdoor","location use");
+    const refillSprayerType=p.refill_sprayer_type??spec("sprayer type","refill type","container type");
     return {
       retailer:this.retailer,productId:id,retailerSku:p.sku??null,asin:p.asin??null,brand:p.brand??null,
       upc:p.upc??null,gtin:p.gtin??null,ean:p.ean??null,modelNumber:p.model_number??p.model??null,mpn:p.mpn??null,
       title:p.title??null,description:p.description??null,category:p.category??null,subcategory:p.subcategory??null,
-      productType:p.product_type??p.type??null,targetUse:p.target_use??null,formulation:p.formulation??null,sizeText,
+      productType:p.product_type??p.type??null,functionalCategory,targetUse:p.target_use??null,formulation:p.formulation??null,
+      activeIngredient,coverage,applicationMethod,indoorOutdoor,refillSprayerType,sizeText,
       normalizedQuantity:measure?.quantity??null,normalizedUnit:measure?.unit??null,packQuantity:p.pack_quantity??null,
       productUrl:url,canonicalUrl:p.canonical_url??null,
       price:typeof p.price==="number"?p.price:null,originalPrice:typeof p.original_price==="number"?p.original_price:null,
       currency:p.currency??"USD",availability:p.availability??null,seller:p.seller??null,fulfilledBy:p.fulfilled_by??null,
       rating:typeof p.rating==="number"?p.rating:null,reviewCount:typeof p.review_count==="number"?p.review_count:null,
       images:Array.isArray(p.images)?p.images:[],features:Array.isArray(p.features)?p.features:[],
-      specifications:p.specifications&&typeof p.specifications==="object"?p.specifications:{},
+      specifications,
       variants:Array.isArray(p.variants)?p.variants:[],scrapedAt:new Date().toISOString(),raw:data
     };
   }
