@@ -10,7 +10,9 @@ export interface ProductReference {
 
 export interface CanonicalProduct {
   id: string; brandId: string; brand: string; title: string;
-  category?: string | null; subcategory?: string | null; productType?: string | null; targetUse?: string | null; formulation?: string | null;
+  category?: string | null; subcategory?: string | null; productType?: string | null; functionalCategory?: string | null;
+  targetUse?: string | null; formulation?: string | null; activeIngredient?: string | null; coverage?: string | null;
+  applicationMethod?: string | null; indoorOutdoor?: string | null; refillSprayerType?: string | null;
   modelNumber?: string | null; mpn?: string | null; upc?: string | null; gtin?: string | null; ean?: string | null;
   sizeText?: string | null; normalizedQuantity?: number | null; normalizedUnit?: string | null; packQuantity?: number | null;
 }
@@ -19,11 +21,12 @@ export interface NormalizedRetailerProduct {
   retailer: Retailer; brand?: string | null; productId: string; retailerSku?: string | null; asin?: string | null;
   upc?: string | null; gtin?: string | null; ean?: string | null; modelNumber?: string | null; mpn?: string | null;
   title?: string | null; description?: string | null; category?: string | null; subcategory?: string | null; productType?: string | null;
-  targetUse?: string | null; formulation?: string | null; sizeText?: string | null; normalizedQuantity?: number | null;
-  normalizedUnit?: string | null; packQuantity?: number | null; productUrl: string; canonicalUrl?: string | null;
-  price?: number | null; originalPrice?: number | null; currency?: string | null; availability?: string | null; seller?: string | null;
-  fulfilledBy?: string | null; rating?: number | null; reviewCount?: number | null; images: string[]; features: string[];
-  specifications: Record<string,string>; variants: unknown[]; scrapedAt: string; raw?: unknown;
+  functionalCategory?: string | null; targetUse?: string | null; formulation?: string | null; activeIngredient?: string | null;
+  coverage?: string | null; applicationMethod?: string | null; indoorOutdoor?: string | null; refillSprayerType?: string | null;
+  sizeText?: string | null; normalizedQuantity?: number | null; normalizedUnit?: string | null; packQuantity?: number | null;
+  productUrl: string; canonicalUrl?: string | null; price?: number | null; originalPrice?: number | null; currency?: string | null;
+  availability?: string | null; seller?: string | null; fulfilledBy?: string | null; rating?: number | null; reviewCount?: number | null;
+  images: string[]; features: string[]; specifications: Record<string,string>; variants: unknown[]; scrapedAt: string; raw?: unknown;
 }
 
 export interface NormalizedReview {
@@ -32,9 +35,4 @@ export interface NormalizedReview {
 }
 
 export interface CompetitorSearchOptions { limit: number; sizeTolerance: number; }
-export interface ReviewOptions {
-  maxReviews: number;
-  incremental: boolean;
-  knownReviewIds?: string[];
-  forceRefresh?: boolean;
-}
+export interface ReviewOptions { maxReviews: number; incremental: boolean; knownReviewIds?: string[]; forceRefresh?: boolean; }
