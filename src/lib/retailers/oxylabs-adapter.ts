@@ -12,10 +12,66 @@ export abstract class OxylabsRetailerAdapter implements RetailerAdapter {
   protected reviewPageUrl(product:NormalizedRetailerProduct,page:number){return page===1?product.productUrl:`${product.productUrl}${product.productUrl.includes("?")?"&":"?"}page=${page}#reviews`;}
 
   async discoverProducts(startUrl:string,brand:string):Promise<ProductReference[]>{
-    const key=`${this.retailer}:search:${startUrl}`;
-    const {data}=await this.scraper.getOrFetch<any>(key,"retailer_search",{source:this.sourceFor("listing"),url:startUrl,parse:true});
-    const links=this.extractLinks(data).filter((u:string)=>this.isProductUrl(u));
-    return [...new Set(links)].map(url=>({retailer:this.retailer,retailerProductId:this.productIdFromUrl(url),url}));
+    const pending=[startUrl];
+    const visited=new Set<string>();
+    const productUrls=new Set<string>();
+    const maxPages=50;
+
+    while(pending.length&&visited.size<maxPages){
+      const pageUrl=pending.shift()!;
+      if(visited.has(pageUrl)||!this.isRetailerUrl(pageUrl))continue;
+      visited.add(pageUrl);
+
+      const key=`${this.retailer}:search:${pageUrl}`;
+      const {data}=await this.scraper.getOrFetch<any>(
+        key,"retailer_search",{source:this.sourceFor("listing"),url:pageUrl,parse:true}
+      );
+
+      for(const url of this.extractLinks(data)){
+        if(this.isProductUrl(url)&&this.isRetailerUrl(url))productUrls.add(url);
+      }
+
+      const next=this.extractNextPageUrl(data,pageUrl);
+      if(next&&!visited.has(next)&&this.isRetailerUrl(next))pending.push(next);
+    }
+
+    return [...productUrls].map(url=>({
+      retailer:this.retailer,
+      retailerProductId:this.productIdFromUrl(url),
+      url,
+    }));
+  }
+
+  private isRetailerUrl(url:string){
+    try{
+      const host=new URL(url).hostname.toLowerCase();
+      if(this.retailer==="amazon")return /(^|\.)amazon\.[a-z.]+$/.test(host);
+      if(this.retailer==="walmart")return host==="walmart.com"||host.endsWith(".walmart.com");
+      if(this.retailer==="lowes")return host==="lowes.com"||host.endsWith(".lowes.com");
+      return host==="homedepot.com"||host.endsWith(".homedepot.com");
+    }catch{return false;}
+  }
+
+  private extractNextPageUrl(data:any,currentUrl:string):string|null{
+    const candidates:string[]=[];
+    const walk=(value:any,depth=0)=>{
+      if(depth>6||value==null)return;
+      if(Array.isArray(value)){for(const item of value.slice(0,100))walk(item,depth+1);return;}
+      if(typeof value!=="object")return;
+      for(const [key,v] of Object.entries(value)){
+        const normalized=key.toLowerCase().replace(/[^a-z]/g,"");
+        if(typeof v==="string"&&["next","nextpage","nextpageurl","nexturl"].includes(normalized))candidates.push(v);
+        else if(typeof v==="object")walk(v,depth+1);
+      }
+    };
+    walk(data);
+    for(const candidate of candidates){
+      try{
+        const resolved=new URL(candidate,currentUrl).toString();
+        if(resolved!==currentUrl&&this.isRetailerUrl(resolved)&&!this.isProductUrl(resolved))return resolved;
+      }catch{}
+    }
+    return null;
   }
 
   async scrapeProduct(ref:ProductReference):Promise<NormalizedRetailerProduct>{
