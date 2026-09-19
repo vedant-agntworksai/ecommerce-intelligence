@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDb } from "@/lib/db";
 import { getProductDetail,getReviewAnalytics } from "@/lib/analytics";
 import { KpiGrid } from "@/components/kpi-grid";
+import { IdentityActions } from "@/components/identity-actions";
 import { BarList } from "@/components/bar-list";
 import { LineChart } from "@/components/line-chart";
 import { formatCurrency,formatDate,formatNumber,titleCase } from "@/lib/format";
@@ -90,6 +91,8 @@ export default async function ProductPage({
           </dl>
         </section>}
     </div>}
+
+    {tab==="overview"&&<IdentityActions productId={id} listings={data.listings.map((r:any)=>({id:r.id,retailer:r.retailer,title:r.title,retailer_product_id:r.retailer_product_id}))}/>}
 
     {tab==="retailer-listings"&&<section className="card overflow-x-auto">
       <table className="w-full min-w-[1200px] text-sm">
