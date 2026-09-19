@@ -1,7 +1,7 @@
 import type { Database } from "@/lib/db/types";
 import { unitPrice } from "@/lib/matching/units";
 
-export interface CompetitorFilters { sourceBrand?:string; category?:string; subcategory?:string; form?:string; retailer?:string; }
+export interface CompetitorFilters { sourceBrand?:string; category?:string; subcategory?:string; size?:string; form?:string; retailer?:string; }
 const num=(v:unknown)=>v==null?null:Number(v);
 
 export async function getCompetitorMarket(db:Database,filters:CompetitorFilters={}){
@@ -12,6 +12,7 @@ export async function getCompetitorMarket(db:Database,filters:CompetitorFilters=
   if(filters.sourceBrand)where.push(`LOWER(sb.name)=${add(filters.sourceBrand.toLowerCase())}`);
   if(filters.category)where.push(`LOWER(COALESCE(source.category,''))=${add(filters.category.toLowerCase())}`);
   if(filters.subcategory)where.push(`LOWER(COALESCE(source.subcategory,''))=${add(filters.subcategory.toLowerCase())}`);
+  if(filters.size)where.push(`LOWER(COALESCE(source.size_text,'')) LIKE ${add(`%${filters.size.toLowerCase()}%`)}`);
   if(filters.form)where.push(`LOWER(COALESCE(source.formulation,''))=${add(filters.form.toLowerCase())}`);
   if(filters.retailer)where.push(`EXISTS(SELECT 1 FROM retailer_products rx WHERE rx.canonical_product_id=competitor.id AND rx.retailer=${add(filters.retailer)})`);
 
