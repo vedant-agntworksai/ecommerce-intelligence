@@ -4,15 +4,17 @@ import { isFresh } from "@/lib/cache/policy";
 
 export class CacheRepository {
   constructor(private db: Database) {}
-  async get(resourceKey:string, kind:ResourceKind) {
+
+  async get(resourceKey:string, kind:ResourceKind, ttlMs:number) {
     const {rows} = await this.db.query<{payload_json:string; updated_at:string}>(
       "SELECT payload_json, updated_at FROM resource_cache WHERE resource_key = $1 AND resource_kind = $2 LIMIT 1",
       [resourceKey, kind]
     );
     const row = rows[0];
     if (!row) return null;
-    return { payload: JSON.parse(row.payload_json), updatedAt: row.updated_at, fresh: isFresh(row.updated_at, kind) };
+    return { payload: JSON.parse(row.payload_json), updatedAt: row.updated_at, fresh: isFresh(row.updated_at, ttlMs) };
   }
+
   async put(resourceKey:string, kind:ResourceKind, payload:unknown) {
     const json = JSON.stringify(payload);
     await this.db.query(
