@@ -61,8 +61,12 @@ export async function processScrapeJob(payload:ScrapeJobPayload){
 
     if(knownListing&&!payload.forceRefresh){
       reused++;
+      product=storedListingToProduct(knownListing);
       if(knownListing.canonical_product_id){
         canonicalProduct=await canonicals.getById(knownListing.canonical_product_id);
+      }
+      if(payload.collectProductReviews){
+        newReviews+=await collectIncrementalReviews(reviews,adapter,product,payload.maximumReviewsPerProduct,false);
       }
     } else if(payload.collectPdp){
       product=await adapter.scrapeProduct(ref);
@@ -168,5 +172,20 @@ export async function processScrapeJob(payload:ScrapeJobPayload){
     competitorLinks,
     competitorPdps,
     competitorReviews,
+  };
+}
+
+function storedListingToProduct(row:any):NormalizedRetailerProduct{
+  return {
+    retailer:row.retailer,
+    productId:row.retailer_product_id,
+    retailerSku:row.retailer_sku??null,
+    asin:row.asin??null,
+    upc:row.upc??null,gtin:row.gtin??null,ean:row.ean??null,modelNumber:row.model_number??null,mpn:row.mpn??null,
+    title:row.title??null,productUrl:row.product_url,canonicalUrl:row.canonical_url??null,
+    price:row.price==null?null:Number(row.price),originalPrice:row.original_price==null?null:Number(row.original_price),
+    currency:row.currency??null,availability:row.availability??null,seller:row.seller??null,fulfilledBy:row.fulfilled_by??null,
+    rating:row.rating==null?null:Number(row.rating),reviewCount:row.review_count==null?null:Number(row.review_count),
+    images:[],features:[],specifications:{},variants:[],scrapedAt:String(row.last_scraped??new Date().toISOString()),
   };
 }
