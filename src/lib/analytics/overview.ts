@@ -93,6 +93,11 @@ export async function getOverviewAnalytics(db:Database){
     FROM canonical_products cp JOIN brands b ON b.id=cp.brand_id
     ORDER BY cp.created_at DESC LIMIT 8
   `)).rows;
+  const recentUpdated=(await db.query<any>(`
+    SELECT cp.id,cp.title,b.name brand,cp.updated_at
+    FROM canonical_products cp JOIN brands b ON b.id=cp.brand_id
+    ORDER BY cp.updated_at DESC LIMIT 8
+  `)).rows;
   const recentFailures=(await db.query<any>(`
     SELECT id,type,error,created_at,finished_at FROM jobs
     WHERE status='failed' ORDER BY created_at DESC LIMIT 8
@@ -105,6 +110,6 @@ export async function getOverviewAnalytics(db:Database){
       missingPrice,withoutReviews,multiRetailer:n(coverage.multi_retailer),singleRetailer:n(coverage.single_retailer),
     },
     charts:{productsDiscovered,reviewsCollected,productsByRetailer,productsByBrand,ratingDistribution,priceHistory},
-    recentProducts,recentFailures,
+    recentProducts,recentUpdated,recentFailures,
   };
 }
